@@ -1,0 +1,9 @@
+# MariaDB
+services:
+  mariadb:
+    image: mariadb
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: 123456
+    ports:
+      - "3306:3306"
