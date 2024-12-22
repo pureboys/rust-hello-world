@@ -23,7 +23,7 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt().with_max_level(Level::TRACE).init();
+    tracing_subscriber::fmt().with_max_level(Level::DEBUG).init();
 
     let configs = get_configs();
     let configs = config::configs::parse_toml(configs)?;
