@@ -5,7 +5,7 @@ use serde::Serialize;
 pub struct MyResponse<T> {
     pub error_code: i32,
     pub err_msg: String,
-    pub data: Option<T>,
+    pub data: T,
 }
 
 impl<T: Serialize> IntoResponse for MyResponse<T> {
@@ -18,11 +18,11 @@ pub fn resp_success<T: Serialize>(data: T) -> MyResponse<T> {
     MyResponse {
         error_code: 0,
         err_msg: "success".to_string(),
-        data: Some(data),
+        data,
     }
 }
 
-pub fn resp_error<T: Serialize>(error_code: i32, err_msg: String) -> MyResponse<T> {
+pub fn resp_error<T>(error_code: i32, err_msg: String) -> MyResponse<Option<T>> {
     MyResponse {
         error_code,
         err_msg,

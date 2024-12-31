@@ -6,13 +6,13 @@ use axum::extract::{Path, Query, State};
 use axum::response::IntoResponse;
 use axum::Json;
 use sea_orm::entity::prelude::*;
-use sea_orm::QueryOrder;
+use sea_orm::{QueryOrder, Set};
 use sea_orm::{ActiveValue, QuerySelect};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
-#[derive(Deserialize, Serialize)]
-struct Ticket {
+#[derive(Deserialize, Serialize, Debug)]
+pub struct Ticket {
     pub id: i32,
     pub code_num: String,
     pub create_at: Option<DateTime>,
@@ -33,8 +33,15 @@ pub async fn create_tickets(
         code_num: ActiveValue::Set(create_ticket.code_num),
         ..Default::default()
     };
-    let _ = ticket.insert(&state.db).await;
-    "Tickets created!"
+    let ticket = ticket.insert(&state.db).await.expect("Error");
+    info!("ticket: {:?}", ticket);
+    let my_ticket:Ticket = Ticket {
+        id: ticket.id,
+        code_num: ticket.code_num,
+        create_at: ticket.create_at,
+        update_at: ticket.update_at,
+    };
+    util::resp_success(my_ticket)
 }
 
 #[derive(Serialize, Deserialize)]
@@ -89,7 +96,7 @@ pub async fn get_ticket(
     info!("ticket: {:?}", ticket);
 
     if let Some(ticket) = ticket {
-        let some_data:Option<Ticket> = Some(Ticket {
+        let some_data: Option<Ticket> = Some(Ticket {
             id: ticket.id,
             code_num: ticket.code_num,
             create_at: ticket.create_at,
@@ -98,4 +105,21 @@ pub async fn get_ticket(
         return util::resp_success(some_data);
     }
     util::resp_error(1, "Ticket not found".to_string())
+}
+
+
+pub async fn update_ticket(
+    State(state): State<AppState>,
+    Json(update_ticket): Json<Ticket>,
+) -> impl IntoResponse {
+    info!("Updating ticket...{:?}", update_ticket.id);
+    let  ticket: Option<tickets::Model> = Tickets::find_by_id(update_ticket.id)
+        .one(&state.db)
+        .await
+        .expect("Error");
+
+    let mut ticket: tickets::ActiveModel = ticket.unwrap().into();
+    ticket.code_num = Set(update_ticket.code_num.to_owned());
+    ticket.update(&state.db).await.expect("Error");
+    util::resp_success(())
 }
